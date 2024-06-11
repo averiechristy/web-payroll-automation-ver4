@@ -25,8 +25,6 @@ class TemplateKaryawan implements FromCollection, WithHeadings, WithEvents
             'NIK KTP',
             'Unit Kerja Penempatan',
             'Posisi',
-            'Upah Pokok',
-            'Tunjangan Supervisor',
             'Management Fee (%)',
             'Jabatan',
             'Bagian',
@@ -78,9 +76,7 @@ class TemplateKaryawan implements FromCollection, WithHeadings, WithEvents
                 $sheet->getColumnDimension('J')->setWidth(20);
                 $sheet->getColumnDimension('K')->setWidth(20);
                 $sheet->getColumnDimension('L')->setWidth(20);
-                $sheet->getColumnDimension('M')->setWidth(20);
-                $sheet->getColumnDimension('N')->setWidth(20);
-
+              
                 // Format 'Management Fee (%)' column as percentage
                 $sheet->getStyle('J2:J100000')->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_PERCENTAGE_00);
               

@@ -71,6 +71,8 @@ Route::post('/importmad', [MADController::class,'import'])->name('importmad');
 Route::get('/mad/show/{id}', [MADController::class,'show'])->name('showmad');
 Route::post('/mad/update/{id}', [MADController::class,'update'])->name('updatemad');
 Route::delete('/deletemad/{id}', [MADController::class, 'destroy'])->name('deletemad');
+Route::get('/exportmad', [MadController::class, 'exportMad'])->name('exportmad');
+
 
 Route::get('/holiday', [HolidayController::class,'index'])->name('holiday');
 Route::get('/holiday/show/{id}', [HolidayController::class,'show'])->name('showholiday');
@@ -89,6 +91,8 @@ Route::post('/gaji/store', [GajiController::class,'store'])->name('gaji.store');
 Route::get('/gaji/show/{id}', [GajiController::class,'show'])->name('showgaji');
 Route::post('/gaji/update/{id}', [GajiController::class,'update'])->name('updategaji');
 Route::delete('/deletegaji/{id}', [GajiController::class, 'destroy'])->name('deletegaji');
+Route::get('/downloadgaji', [GajiController::class,'download'])->name('downloadgaji');
+Route::post('/importgaji', [GajiController::class,'import'])->name('importgaji');
 
 
 

@@ -10,11 +10,31 @@
                 </div>
               </div>
               <div class="card shadow mb-4">
+          
+
+
                 <div class=" py-3">
-                <a href="{{route('gaji.create')}}">
-                    <button type="button" class="btn btn-primary ml-3">Tambah Gaji & Tunjangan</button>
-                </a>
-                </div>
+
+<h5 class="description ml-3">Unggah file untuk menambahkan data karyawan baru, atau tambahkan ke kumpulan data karyawan yang sudah ada. <br> Anda dapat mengunggah file Excel</h5>
+
+<div class="button-group ml-3">
+<a href="{{route('gaji.create')}}">
+        <button type="button" class="btn btn-primary ">Tambah Gaji & Tunjangan</button>
+    </a>
+    <a href="{{route('downloadgaji')}}">
+        <button type="button" class="btn btn-warning" download>Unduh Template</button>
+    </a>
+</div>
+
+<div class="importdata ml-3">
+    <form action="{{ route('importgaji') }}"  method="post" enctype="multipart/form-data" style="display: flex; align-items: center;">
+    @csrf
+    <input type="file" name="file" accept=".xlsx, .xls" style="margin-right: 10px;" required>
+        <button class="btn btn-info" type="submit">Unggah File</button>
+    </form>
+</div>
+
+</div>
 <div class="card-body">
         <div class="dataTables_length mb-3" id="myDataTable_length">
         <label for="entries"> Show

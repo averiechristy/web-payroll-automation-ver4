@@ -159,6 +159,14 @@ function validateForm() {
     alert("Jam selesai harus diisi.");
     return false;
   }
+  else if (jammulai == jamselesai) {
+                alert("Jam mulai tidak boleh sama dengan jam selesai.");
+                return false;
+            }
+ else if (jammulai >jamselesai) {
+                alert("Jam mulai tidak boleh lebih dari jam selesai.");
+                return false;
+            }
   else if (keterangan == "") {
     alert("Keterangan harus diisi.");
     return false;

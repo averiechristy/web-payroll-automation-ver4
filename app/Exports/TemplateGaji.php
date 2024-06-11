@@ -15,17 +15,18 @@ use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use PhpOffice\PhpSpreadsheet\Style\Protection;
 
-class MADExport implements FromCollection, WithHeadings, WithEvents
+class TemplateGaji implements FromCollection, WithHeadings, WithEvents
 {
     public function headings(): array
     {
         return [
             'Nama Karyawan',
-            'Tanggal Lembur',
-            'Jam Mulai',
-            'Jam Selesai',
-            'Keterangan Lembur',
-            'Keterangan Perbaikan'
+            'Gaji',
+            'Tanggal Mulai Gaji',
+            'Tanggal Selesai Gaji',
+            'Tunjangan',
+            'Tanggal Mulai Tunjangan',
+            'Tanggal Selesai Tunjangan',
         ];
     }
 
@@ -46,7 +47,7 @@ class MADExport implements FromCollection, WithHeadings, WithEvents
                 $event->sheet->getStyle('1:100000')->getProtection()->setLocked(false);
                 // Lock the header row
                 $sheet->getStyle('A1:XFD1')->getProtection()->setLocked(Protection::PROTECTION_PROTECTED);
-                                    
+                    
                 // Enable sheet protection
                 $sheet->getProtection()->setSheet(true);
                 $sheet->getProtection()->setSelectLockedCells(false);
@@ -70,39 +71,10 @@ class MADExport implements FromCollection, WithHeadings, WithEvents
                 $sheet->getColumnDimension('D')->setWidth(20);
                 $sheet->getColumnDimension('E')->setWidth(20);
                 $sheet->getColumnDimension('F')->setWidth(20);
+                $sheet->getColumnDimension('G')->setWidth(20);
 
+                
                 // Set data validation for date and time columns
-                for ($i = 2; $i <= 100000; $i++) {
-                    $sheet->getCell('B' . $i)->getDataValidation()
-                        ->setType(DataValidation::TYPE_DATE)
-                        ->setErrorStyle(DataValidation::STYLE_STOP)
-                        ->setAllowBlank(true)
-                        ->setShowInputMessage(true)
-                        ->setShowErrorMessage(true)
-                        ->setErrorTitle('Invalid Date')
-                        ->setError('The date is not valid.')
-                        ->setFormula1('DATE(1900,1,1)');
-                    
-                    $sheet->getCell('C' . $i)->getDataValidation()
-                        ->setType(DataValidation::TYPE_TIME)
-                        ->setErrorStyle(DataValidation::STYLE_STOP)
-                        ->setAllowBlank(true)
-                        ->setShowInputMessage(true)
-                        ->setShowErrorMessage(true)
-                        ->setErrorTitle('Invalid Time')
-                        ->setError('The time is not valid.')
-                        ->setFormula1('TIME(0,0,0)');
-                    
-                    $sheet->getCell('D' . $i)->getDataValidation()
-                        ->setType(DataValidation::TYPE_TIME)
-                        ->setErrorStyle(DataValidation::STYLE_STOP)
-                        ->setAllowBlank(true)
-                        ->setShowInputMessage(true)
-                        ->setShowErrorMessage(true)
-                        ->setErrorTitle('Invalid Time')
-                        ->setError('The time is not valid.')
-                        ->setFormula1('TIME(0,0,0)');
-                }
 
                 // Get names from Karyawan model
                 $nama = Karyawan::pluck('nama_karyawan')->toArray();
@@ -131,6 +103,46 @@ class MADExport implements FromCollection, WithHeadings, WithEvents
                         ->setErrorTitle('Input error')
                         ->setError('Value is not in list.')
                         ->setFormula1('NamaKaryawan!$A$1:$A$' . count($nama));
+
+                        $sheet->getCell('C' . $i)->getDataValidation()
+                        ->setType(DataValidation::TYPE_DATE)
+                        ->setErrorStyle(DataValidation::STYLE_STOP)
+                        ->setAllowBlank(true)
+                        ->setShowInputMessage(true)
+                        ->setShowErrorMessage(true)
+                        ->setErrorTitle('Invalid Date')
+                        ->setError('The date is not valid.')
+                        ->setFormula1('DATE(1900,1,1)');
+
+                        $sheet->getCell('D' . $i)->getDataValidation()
+                        ->setType(DataValidation::TYPE_DATE)
+                        ->setErrorStyle(DataValidation::STYLE_STOP)
+                        ->setAllowBlank(true)
+                        ->setShowInputMessage(true)
+                        ->setShowErrorMessage(true)
+                        ->setErrorTitle('Invalid Date')
+                        ->setError('The date is not valid.')
+                        ->setFormula1('DATE(1900,1,1)');
+
+                        $sheet->getCell('F' . $i)->getDataValidation()
+                        ->setType(DataValidation::TYPE_DATE)
+                        ->setErrorStyle(DataValidation::STYLE_STOP)
+                        ->setAllowBlank(true)
+                        ->setShowInputMessage(true)
+                        ->setShowErrorMessage(true)
+                        ->setErrorTitle('Invalid Date')
+                        ->setError('The date is not valid.')
+                        ->setFormula1('DATE(1900,1,1)');
+
+                        $sheet->getCell('G' . $i)->getDataValidation()
+                        ->setType(DataValidation::TYPE_DATE)
+                        ->setErrorStyle(DataValidation::STYLE_STOP)
+                        ->setAllowBlank(true)
+                        ->setShowInputMessage(true)
+                        ->setShowErrorMessage(true)
+                        ->setErrorTitle('Invalid Date')
+                        ->setError('The date is not valid.')
+                        ->setFormula1('DATE(1900,1,1)');
                 }
             }
         ];

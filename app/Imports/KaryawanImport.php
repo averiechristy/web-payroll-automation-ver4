@@ -76,17 +76,7 @@ class KaryawanImport implements ToModel, WithStartRow, WithHeadingRow, WithMulti
         $posisiid = $dataposisi->id;
 
 
-        $upah = $row['upah_pokok'];
-
-        if (!is_numeric($row['upah_pokok'])) {
-            throw new Exception("Format upah pokok $upah tidak valid.");
-        }
-    
-        $tunjangan = $row['tunjangan_supervisor'];
-
-        if (!is_numeric($row['tunjangan_supervisor'])) {
-            throw new Exception("Format tunjangan supervisor $tunjangan tidak valid.");
-        }
+       
         $managementfee = $row['management_fee'];
 
         if (!is_numeric($row['management_fee'])) {
@@ -111,8 +101,7 @@ class KaryawanImport implements ToModel, WithStartRow, WithHeadingRow, WithMulti
             'nik_ktp' => $nikktp,
             'penempatan_id' => $penempatanid,
             'posisi_id' => $posisiid,
-            'upah_pokok' => $upah,
-            'tunjangan_spv' => $tunjanganspv,
+           
             'kode_cabang_pembayaran' => $kodebayar,
             'rcc_pembayaran' => $rcc,
             'management_fee' => $management,

@@ -2,6 +2,7 @@
 
 namespace App\Imports;
 
+use App\Models\Gaji;
 use App\Models\Holiday;
 use App\Models\Karyawan;
 use App\Models\MAD;
@@ -55,8 +56,6 @@ $formattedTimeStart = $timeStart->format('H:i:s');
 $formattedTimeEnd = $timeEnd->format('H:i:s');
 
 
-
-
 $tanggalLembur = new DateTime($formattedDate);
 $hariDalamMinggu = $tanggalLembur->format('N'); // 1 = Senin, ..., 7 = Minggu
 
@@ -68,7 +67,6 @@ $dataholiday = Holiday::where('date', $tanggalLembur)->first();
 $statusHari = $dataholiday -> description;
 
 // Tentukan apakah hari libur atau hari kerja
-
 
 
 // Calculate the difference in hours
@@ -90,19 +88,106 @@ $datapenempatan = Penempatan::find($penempatanid);
 
 
 if($datapenempatan -> hitung_tunjangan == "Yes"){
- 
- $upah= $datakaryawan->upah_pokok;
 
- $tunjanganamount = $datakaryawan->tunjangan_spv;
 
- $gajipokok = $upah + $tunjanganamount;
+    $gaji = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_gaji', '<=', $formattedDate)
+    ->where('tanggal_selesai_gaji', '>=', $formattedDate)
+    ->first();
+
+
+
+    if (is_null($gaji)) {
+        $karyawan = Karyawan::find($karyawanid);
+        $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+      
+        throw new Exception( "Gaji untuk karyawan $namaKaryawan belum ditambahkan.");
+
+       
+    }
+
+$upah = $gaji -> gaji;
+
+
+
+$tunjangan = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_tunjangan', '<=', $formattedDate)
+    ->where('tanggal_selesai_tunjangan', '>=', $formattedDate)
+    ->first();
+
+    if (is_null($tunjangan)) {
+         $karyawan = Karyawan::find($karyawanid);
+        $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+        throw new Exception( "Tunjangan untuk karyawan $namaKaryawan belum ditambahkan.");
+
+       
+    }
+
+$tunjanganamount = $tunjangan->tunjangan;
+
+
+$gajipokok = $upah + $tunjanganamount;
 
 } else if ($datapenempatan -> hitung_tunjangan =="No")
 {
- 
- $gajipokok = $datakaryawan->upah_pokok;
+
+$gaji = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_gaji', '<=', $formattedDate)
+->where('tanggal_selesai_gaji', '>=', $formattedDate)
+->first();
+
+if (is_null($gaji)) {
+    $karyawan = Karyawan::find($karyawanid);
+    $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+    throw new Exception( "Gaji untuk karyawan $namaKaryawan belum ditambahkan.");
+
+   
+}
+$tunjangan = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_tunjangan', '<=', $formattedDate)
+->where('tanggal_selesai_tunjangan', '>=', $formattedDate)
+->first();
+
+if (is_null($tunjangan)) {
+     $karyawan = Karyawan::find($karyawanid);
+    $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+    throw new Exception( "Tunjangan untuk karyawan $namaKaryawan belum ditambahkan.");
+
+   
+}
+
+$tunjanganamount = $tunjangan->tunjangan;
+
+$upah = $gaji -> gaji;
+$gajipokok = $upah;
+
 } else if (is_null($datapenempatan->hitung_tunjangan)) {
- $gajipokok = $datakaryawan->upah_pokok;
+
+    $gaji = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_gaji', '<=', $formattedDate)
+    ->where('tanggal_selesai_gaji', '>=', $formattedDate)
+    ->first();
+
+    if (is_null($gaji)) {
+        $karyawan = Karyawan::find($karyawanid);
+        $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+        throw new Exception( "Gaji untuk karyawan $namaKaryawan belum ditambahkan.");
+
+       
+    }
+
+    $tunjangan = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_tunjangan', '<=', $formattedDate)
+    ->where('tanggal_selesai_tunjangan', '>=', $formattedDate)
+    ->first();
+
+    if (is_null($tunjangan)) {
+         $karyawan = Karyawan::find($karyawanid);
+        $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+        throw new Exception( "Tunjangan untuk karyawan $namaKaryawan belum ditambahkan.");
+
+       
+    }
+
+$tunjanganamount = $tunjangan->tunjangan;
+    $upah = $gaji -> gaji;
+    $gajipokok = $upah;
+    
+
 }
 
 
@@ -161,6 +246,7 @@ $biayajamkeempat = intval(round(($jamkeempat * 4 * $gajipokok) / 173));
 }
 
 $subtotal = $biayajampertama + $biayajamkedua + $biayajamketiga + $biayajamkeempat;
+dd($subtotal);
 
 $managementfee = $karyawan->management_fee;
 $amountmanagement = intval(round($managementfee  * $subtotal));
@@ -187,6 +273,8 @@ $totalsebelumppn = $subtotal + $amountmanagement;
             'biaya_jam_ketiga' => $biayajamketiga,
             'biaya_jam_keempat' => $biayajamkeempat,
             'subtotal' => $subtotal,
+            'gaji' => $upah,
+            'tunjangan' => $tunjangan,
             'management_fee' => $managementfee,
             'management_fee_amount' => $amountmanagement,
             'total_sebelum_ppn' => $totalsebelumppn,

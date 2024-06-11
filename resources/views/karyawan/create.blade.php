@@ -103,35 +103,9 @@ function validasiNumber(input) {
                   </div>       
                     
                     
-                  <div class="form-group mb-4">
-                    <label for="" class="form-label" style="color:black;">Upah Pokok</label>
-                    <input name="upah_pokok" type="number" min="0"  class="form-control " style="border-color: #01004C;" value="" oninput="validasiNumber(this)"/>
-                    </div>    
-
-<script>
-function validasiNumber(input) {
-    // Hapus karakter titik (.) dari nilai input
-    input.value = input.value.replace(/\./g, '');
-
-    // Pastikan hanya karakter angka yang diterima
-    input.value = input.value.replace(/\D/g, '');
-}
-</script>
+              
                     
-                    <div class="form-group mb-4">
-                    <label for="" class="form-label" style="color:black;">Tunjangan SPV</label>
-                    <input name="tunjangan_spv" type="text"  class="form-control " style="border-color: #01004C;" value=""  oninput="validasiNumber(this)"/>
-                    </div>    
-
-          <script>
-function validasiNumber(input) {
-    // Hapus karakter titik (.) dari nilai input
-    input.value = input.value.replace(/\./g, '');
-
-    // Pastikan hanya karakter angka yang diterima
-    input.value = input.value.replace(/\D/g, '');
-}
-</script>
+                  
 
                     <div class="form-group mb-4">
                     <label for="" class="form-label" style="color:black;">Management Fee (%)</label>

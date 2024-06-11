@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ExportDataMAD;
 use App\Exports\MADExport;
 use App\Imports\MADImport;
+use App\Models\Gaji;
 use App\Models\Holiday;
 use App\Models\Karyawan;
 use App\Models\MAD;
@@ -25,7 +27,13 @@ class MADController extends Controller
           return Excel::download(new MADExport(), 'templatemad.xlsx');
      }
 
-
+     public function exportMad(Request $request)
+     {
+         $month = $request->input('month');
+         $year = $request->input('year');
+     
+         return Excel::download(new ExportDataMAD($month, $year), 'mad_data.xlsx');
+     }
      public function import(Request $request){
         $request->validate([
             'file' => 'required|mimes:xlsx,xls',
@@ -43,6 +51,7 @@ class MADController extends Controller
                 'Jam Mulai',
                 'Jam Selesai',
                 'Keterangan Lembur',
+                'Keterangan Perbaikan'
             ];
     
             if ($headingRow !== $expectedHeaders) {
@@ -122,21 +131,108 @@ class MADController extends Controller
    $penempatanid = $datakaryawan->penempatan_id;
    $datapenempatan = Penempatan::find($penempatanid);
 
- 
-    if($datapenempatan -> hitung_tunjangan == "Yes"){
-        
-    $upah= $datakaryawan->upah_pokok;
 
-    $tunjanganamount = $datakaryawan->tunjangan_spv;
+    if($datapenempatan -> hitung_tunjangan == "Yes"){
+
+
+        $gaji = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_gaji', '<=', $tanggallembur)
+        ->where('tanggal_selesai_gaji', '>=', $tanggallembur)
+        ->first();
+
+  
+
+        if (is_null($gaji)) {
+            $karyawan = Karyawan::find($karyawanid);
+            $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+          
+            $request->session()->flash('error', "Gaji untuk karyawan $namaKaryawan belum ditambahkan.");
+
+            return redirect(route('mad'));
+        }
+
+    $upah = $gaji -> gaji;
+    
+ 
+
+    $tunjangan = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_tunjangan', '<=', $tanggallembur)
+        ->where('tanggal_selesai_tunjangan', '>=', $tanggallembur)
+        ->first();
+
+        if (is_null($tunjangan)) {
+             $karyawan = Karyawan::find($karyawanid);
+            $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+            $request->session()->flash('error', "Tunjangan untuk karyawan $namaKaryawan belum ditambahkan.");
+
+            return redirect(route('mad'));
+        }
+
+    $tunjanganamount = $tunjangan->tunjangan;
+
 
     $gajipokok = $upah + $tunjanganamount;
 
    } else if ($datapenempatan -> hitung_tunjangan =="No")
    {
-    $gajipokok = $datakaryawan->upah_pokok;
+    
+    $gaji = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_gaji', '<=', $tanggallembur)
+    ->where('tanggal_selesai_gaji', '>=', $tanggallembur)
+    ->first();
+
+    if (is_null($gaji)) {
+        $karyawan = Karyawan::find($karyawanid);
+        $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+        $request->session()->flash('error', "Gaji untuk karyawan $namaKaryawan belum ditambahkan.");
+
+        return redirect(route('mad'));
+    }
+    $tunjangan = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_tunjangan', '<=', $tanggallembur)
+    ->where('tanggal_selesai_tunjangan', '>=', $tanggallembur)
+    ->first();
+
+    if (is_null($tunjangan)) {
+         $karyawan = Karyawan::find($karyawanid);
+        $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+        $request->session()->flash('error', "Tunjangan untuk karyawan $namaKaryawan belum ditambahkan.");
+
+        return redirect(route('mad'));
+    }
+
+$tunjanganamount = $tunjangan->tunjangan;
+
+    $upah = $gaji -> gaji;
+    $gajipokok = $upah;
     
     } else if (is_null($datapenempatan->hitung_tunjangan)) {
-    $gajipokok = $datakaryawan->upah_pokok;
+
+        $gaji = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_gaji', '<=', $tanggallembur)
+        ->where('tanggal_selesai_gaji', '>=', $tanggallembur)
+        ->first();
+    
+        if (is_null($gaji)) {
+            $karyawan = Karyawan::find($karyawanid);
+            $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+            $request->session()->flash('error', "Gaji untuk karyawan $namaKaryawan belum ditambahkan.");
+    
+            return redirect(route('mad'));
+        }
+    
+        $tunjangan = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_tunjangan', '<=', $tanggallembur)
+        ->where('tanggal_selesai_tunjangan', '>=', $tanggallembur)
+        ->first();
+
+        if (is_null($tunjangan)) {
+             $karyawan = Karyawan::find($karyawanid);
+            $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+            $request->session()->flash('error', "Tunjangan untuk karyawan $namaKaryawan belum ditambahkan.");
+
+            return redirect(route('mad'));
+        }
+
+    $tunjanganamount = $tunjangan->tunjangan;
+        $upah = $gaji -> gaji;
+        $gajipokok = $upah;
+        
+    
     }
    
 
@@ -219,6 +315,8 @@ $biayajamkeempat = intval(round(($jamkeempat * 4 * $gajipokok) / 173));
             'total_sebelum_ppn' => $totalsebelumppn,
             'keterangan_lembur' => $keterangan,
             'keterangan_perbaikan' => $perbaikan,
+            'gaji' => $upah,
+            'tunjangan' => $tunjanganamount,
         ]);
 
         $request->session()->flash('success', 'MAD berhasil ditambahkan.');
@@ -255,7 +353,8 @@ $biayajamkeempat = intval(round(($jamkeempat * 4 * $gajipokok) / 173));
      */
     public function update(Request $request, string $id)
     {
-        $mad = MAD::find($id);
+     
+      $mad = MAD::find($id);
 
         $karyawanid = $request->karyawan_id;
         $tanggallembur = $request->tanggal_lembur;
@@ -279,9 +378,10 @@ $biayajamkeempat = intval(round(($jamkeempat * 4 * $gajipokok) / 173));
        
 
 
-        $startTime = Carbon::createFromFormat('H:i:i', $jammulai);
-    $endTime = Carbon::createFromFormat('H:i:i', $jamselesai);
+        $startTime = Carbon::createFromFormat('H:i', $jammulai);
+    $endTime = Carbon::createFromFormat('H:i', $jamselesai);
 
+   
 
     // Calculate the difference in hours
     $hoursWorked = $startTime->diffInHours($endTime);
@@ -293,19 +393,106 @@ $biayajamkeempat = intval(round(($jamkeempat * 4 * $gajipokok) / 173));
   
  
     if($datapenempatan -> hitung_tunjangan == "Yes"){
-     
-     $upah= $datakaryawan->upah_pokok;
+
+
+        $gaji = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_gaji', '<=', $tanggallembur)
+        ->where('tanggal_selesai_gaji', '>=', $tanggallembur)
+        ->first();
+
+  
+
+        if (is_null($gaji)) {
+            $karyawan = Karyawan::find($karyawanid);
+            $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+          
+            $request->session()->flash('error', "Gaji untuk karyawan $namaKaryawan belum ditambahkan.");
+
+            return redirect(route('mad'));
+        }
+
+    $upah = $gaji -> gaji;
+    
  
-     $tunjanganamount = $datakaryawan->tunjangan_spv;
- 
-     $gajipokok = $upah + $tunjanganamount;
- 
+
+    $tunjangan = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_tunjangan', '<=', $tanggallembur)
+        ->where('tanggal_selesai_tunjangan', '>=', $tanggallembur)
+        ->first();
+
+        if (is_null($tunjangan)) {
+             $karyawan = Karyawan::find($karyawanid);
+            $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+            $request->session()->flash('error', "Tunjangan untuk karyawan $namaKaryawan belum ditambahkan.");
+
+            return redirect(route('mad'));
+        }
+
+    $tunjanganamount = $tunjangan->tunjangan;
+
+
+    $gajipokok = $upah + $tunjanganamount;
+
+   } else if ($datapenempatan -> hitung_tunjangan =="No")
+   {
+    
+    $gaji = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_gaji', '<=', $tanggallembur)
+    ->where('tanggal_selesai_gaji', '>=', $tanggallembur)
+    ->first();
+
+    if (is_null($gaji)) {
+        $karyawan = Karyawan::find($karyawanid);
+        $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+        $request->session()->flash('error', "Gaji untuk karyawan $namaKaryawan belum ditambahkan.");
+
+        return redirect(route('mad'));
     }
-    else if ($datapenempatan -> hitung_tunjangan =="No")
-    {
-        $gajipokok = $datakaryawan->upah_pokok;
-    }else if (is_null($datapenempatan->hitung_tunjangan)) {
-        $gajipokok = $datakaryawan->upah_pokok;
+    $tunjangan = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_tunjangan', '<=', $tanggallembur)
+    ->where('tanggal_selesai_tunjangan', '>=', $tanggallembur)
+    ->first();
+
+    if (is_null($tunjangan)) {
+         $karyawan = Karyawan::find($karyawanid);
+        $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+        $request->session()->flash('error', "Tunjangan untuk karyawan $namaKaryawan belum ditambahkan.");
+
+        return redirect(route('mad'));
+    }
+
+$tunjanganamount = $tunjangan->tunjangan;
+
+    $upah = $gaji -> gaji;
+    $gajipokok = $upah;
+    
+    } else if (is_null($datapenempatan->hitung_tunjangan)) {
+
+        $gaji = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_gaji', '<=', $tanggallembur)
+        ->where('tanggal_selesai_gaji', '>=', $tanggallembur)
+        ->first();
+    
+        if (is_null($gaji)) {
+            $karyawan = Karyawan::find($karyawanid);
+            $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+            $request->session()->flash('error', "Gaji untuk karyawan $namaKaryawan belum ditambahkan.");
+    
+            return redirect(route('mad'));
+        }
+    
+        $tunjangan = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_tunjangan', '<=', $tanggallembur)
+        ->where('tanggal_selesai_tunjangan', '>=', $tanggallembur)
+        ->first();
+
+        if (is_null($tunjangan)) {
+             $karyawan = Karyawan::find($karyawanid);
+            $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+            $request->session()->flash('error', "Tunjangan untuk karyawan $namaKaryawan belum ditambahkan.");
+
+            return redirect(route('mad'));
+        }
+
+    $tunjanganamount = $tunjangan->tunjangan;
+        $upah = $gaji -> gaji;
+        $gajipokok = $upah;
+        
+    
     }
     
 
@@ -389,6 +576,8 @@ $biayajamkeempat = intval(round(($jamkeempat * 4 * $gajipokok) / 173));
             'total_sebelum_ppn' => $totalsebelumppn,
             'keterangan_lembur' => $keterangan,
             'keterangan_perbaikan' => $perbaikan,
+            'gaji' => $upah,
+            'tunjangan' => $tunjanganamount,
         ]);
 
         $request->session()->flash('success', 'MAD berhasil diubah.');

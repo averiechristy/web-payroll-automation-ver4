@@ -17,21 +17,13 @@
                     
                     <div class="form-group mb-4">
                     <label for="" class="form-label" style="color:black;">Nama Karyawan</label>
-                    <select name ="karyawan_id" id="karyawan" style="color:black;" class="form-control form-select-lg mb-3" aria-label=".form-select-lg example">
+                    <select name="karyawan_id" id="karyawan" style="color:black;" class="form-control form-select-lg mb-3" aria-label=".form-select-lg example">
                     <option value="" selected disabled>Pilih Karyawan</option>
         @foreach ($karyawan as $item)
             <option value="{{$item->id}}"{{ old('karyawan_id', $data->karyawan_id) == $item->id ? 'selected' : '' }}>{{$item->nama_karyawan}}</option>
         @endforeach
 </select>
 </div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/js/select2.min.js"></script>
-
-<script>
-     $(document).ready(function() {
-        $('#karyawan').select2();
-    });
-</script>
 
                     <div class="row">
                       <div class="col-md-6">
@@ -100,15 +92,38 @@
       <script>
         document.addEventListener('DOMContentLoaded', function() {
             var startDateGaji = document.getElementById('tanggal_mulai_gaji');
+            var endDateGaji = document.getElementById('tanggal_selesai_gaji');
             var startDateTunjangan = document.getElementById('tanggal_mulai_tunjangan');
+            var endDateTunjangan = document.getElementById('tanggal_selesai_tunjangan');
             var currentDate = new Date().toISOString().split('T')[0];
+            var nominalgaji = document.getElementById('gaji');
+            var nominaltunjangan =document.getElementById('tunjangan');
+            var karyawan = document.getElementById('karyawan');
+
+            if (startDateGaji.value <= currentDate || endDateGaji.value <= currentDate || startDateTunjangan.value <= currentDate || endDateTunjangan.value <= currentDate) {
+                karyawan.setAttribute('readonly', true);
+                karyawan.style.pointerEvents = 'none'; // Prevents dropdown from appearing
+                karyawan.onfocus = function() { this.blur(); }; // Prevents focus
+            }
 
             if (startDateGaji.value <= currentDate) {
                 startDateGaji.setAttribute('readonly', true);
+                nominalgaji.setAttribute('readonly', true);
             }
 
             if (startDateTunjangan.value <= currentDate) {
                 startDateTunjangan.setAttribute('readonly', true);
+                nominaltunjangan.setAttribute('readonly', true);
+            }
+
+            if (endDateGaji.value <= currentDate) {
+                endDateGaji.setAttribute('readonly', true);
+                nominalgaji.setAttribute('readonly', true);
+            }
+
+            if (endDateTunjangan.value <= currentDate) {
+                endDateTunjangan.setAttribute('readonly', true);
+                nominalgaji.setAttribute('readonly', true);
             }
         });
     </script>

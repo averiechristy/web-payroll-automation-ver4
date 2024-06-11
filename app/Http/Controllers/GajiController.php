@@ -2,12 +2,67 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\TemplateGaji;
+use App\Imports\GajiImport;
 use App\Models\Gaji;
 use App\Models\Karyawan;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class GajiController extends Controller
 {
+
+    public function download()
+    {
+         // Panggil class export Anda, sesuaikan dengan struktur data Anda
+         return Excel::download(new TemplateGaji(), 'templategaji&tunjangan.xlsx');
+    }
+
+
+    public function import(Request $request){
+        $request->validate([
+            'file' => 'required|mimes:xlsx,xls',
+        ]);
+
+        try {
+            $file = $request->file('file');
+
+            $reader = Excel::toArray([], $file);
+            $headingRow = $reader[0][0];
+
+            $expectedHeaders = [
+                'Nama Karyawan',
+                'Gaji',
+                'Tanggal Mulai Gaji',
+                'Tanggal Selesai Gaji',
+                'Tunjangan',
+                'Tanggal Mulai Tunjangan',
+                'Tanggal Selesai Tunjangan',
+            ];
+    
+            if ($headingRow !== $expectedHeaders) {
+                throw new \Exception("File tidak sesuai.");
+            }
+            $data = Excel::toCollection(new GajiImport, $file);
+
+            if ($data->isEmpty() || $data->first()->isEmpty()) {
+                throw new \Exception("File harus diisi.");
+
+            }
+            // Lakukan impor
+            Excel::import(new GajiImport, $file);
+    
+            // Jika impor berhasil, tampilkan pesan sukses
+            $request->session()->flash('success', "Gaji berhasil ditambahkan.");
+        } catch (\Exception $e) {
+            // Jika terjadi exception, tangkap dan tampilkan pesan kesalahan
+            $request->session()->flash('error',   $e->getMessage());
+        }
+    
+        return redirect()->route('gaji');
+     }
+
 
     public function index()
     {
@@ -33,9 +88,6 @@ class GajiController extends Controller
      */
     public function store(Request $request)
     {
-
-
-
         $karyawanid = $request->karyawan_id;
         $gaji = $request -> gaji;
         $tanggalmulaigaji = $request->tanggal_mulai_gaji;
@@ -57,7 +109,6 @@ class GajiController extends Controller
         })
         ->first();
 
-
         $existingEntryTunjangan = Gaji::where('karyawan_id', $request->karyawan_id)
         ->where(function ($query) use ($request) {
             $query->where(function ($q) use ($request) {
@@ -70,10 +121,7 @@ class GajiController extends Controller
             });
         })
         ->first();
-
-
-     
-
+        
         if ($existingEntryGaji && $existingEntryTunjangan) {
             $karyawan = Karyawan::find($karyawanid);
             $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
@@ -138,7 +186,7 @@ class GajiController extends Controller
      */
     public function update(Request $request, string $id)
     {
- 
+
         $data = Gaji::find($id);
         $karyawanid = $request->karyawan_id;
         $gaji = $request->gaji;
@@ -157,6 +205,8 @@ class GajiController extends Controller
         $data -> tanggal_selesai_tunjangan = $selesaitunjangan;
         $data->save();
 
+
+
         $request->session()->flash('success', "Gaji dan tunjangan berhasil diubah.");
 
         return redirect()->route('gaji');
@@ -167,12 +217,36 @@ class GajiController extends Controller
      * Remove the specified resource from storage.
      */
 
-    public function destroy(string $id)
+    public function destroy(Request $request, $id)
     {
         
         $gaji = Gaji::find($id);
-        dd($gaji);
-        
+    
+
+        $tanggalSekarang = Carbon::now();
+
+        $gajiBerjalan = $tanggalSekarang->between($gaji->tanggal_mulai_gaji, $gaji->tanggal_selesai_gaji);
+        $tunjanganBerjalan = $tanggalSekarang->between($gaji->tanggal_mulai_tunjangan, $gaji->tanggal_selesai_tunjangan);
+    
+        if ($gajiBerjalan || $tunjanganBerjalan) {
+            $request->session()->flash('error', "Tidak bisa menghapus data, periode gaji & tunjangan sudah berjalan.");
+
+            return redirect()->route('gaji');
+        }
+
+
+    $gajiBerakhir = $tanggalSekarang->gt($gaji->tanggal_selesai_gaji);
+    $tunjanganBerakhir = $tanggalSekarang->gt($gaji->tanggal_selesai_tunjangan);
+
+    if ( $gajiBerakhir || $tunjanganBerakhir) {
+        $request->session()->flash('error', "Tidak bisa menghapus data, periode gaji & tunjangan sudah berakhir.");
+
+        return redirect()->route('gaji');    
+    }
+        $gaji->delete();
+        $request->session()->flash('success', "Gaji berhasil dihapus.");
+
+        return redirect()->route('gaji');
     }
 
 }

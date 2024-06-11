@@ -32,6 +32,8 @@ class MAD extends Model
         'keterangan_perbaikan',
         'created_by',
         'updated_by',
+        'gaji',
+        'tunjangan',
     ];
 
     public function karyawan()
