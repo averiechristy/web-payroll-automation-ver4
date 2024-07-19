@@ -51,10 +51,12 @@ class UpdateHolidays extends Command
             'year' => $year
         ]);
 
+        
         $nationalHolidays = [];
 
         if ($response->successful()) {
             $holidays = $response->json()['response']['holidays'];
+           
 
             foreach ($holidays as $holiday) {
                 $nationalHolidays[] = $holiday['date']['iso'];
@@ -65,6 +67,7 @@ class UpdateHolidays extends Command
             $this->error('Failed to fetch national holidays.');
         }
 
+       
         return $nationalHolidays;
     }
 

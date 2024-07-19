@@ -79,10 +79,10 @@ function validasiNumber(input) {
 
 function validateForm() {
     
-    let kodeorange = document.forms["saveform"]["kode_orange"].value;
-    let jenispekerjaan =document.forms["saveform"]["jenis_pekerjaan"].value;
-    let posisi =document.forms["saveform"]["posisi"].value;
-    let standarisasiupah = document.forms["saveform"]["standarisasi_upah"].value;
+    let kodeorange = document.forms["saveform"]["kode_orange"].value.trim();
+    let jenispekerjaan =document.forms["saveform"]["jenis_pekerjaan"].value.trim();
+    let posisi =document.forms["saveform"]["posisi"].value.trim();
+    let standarisasiupah = document.forms["saveform"]["standarisasi_upah"].value.trim();
 
   if (kodeorange == "" ) {
     alert("Kode orange harus diisi.");

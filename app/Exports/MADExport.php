@@ -43,7 +43,7 @@ class MADExport implements FromCollection, WithHeadings, WithEvents
                 $spreadsheet = $sheet->getParent();
                 
                 // Unlock all cells
-                $event->sheet->getStyle('1:100000')->getProtection()->setLocked(false);
+                $event->sheet->getStyle('1:5000')->getProtection()->setLocked(false);
                 // Lock the header row
                 $sheet->getStyle('A1:XFD1')->getProtection()->setLocked(Protection::PROTECTION_PROTECTED);
                                     
@@ -72,7 +72,7 @@ class MADExport implements FromCollection, WithHeadings, WithEvents
                 $sheet->getColumnDimension('F')->setWidth(20);
 
                 // Set data validation for date and time columns
-                for ($i = 2; $i <= 100000; $i++) {
+                for ($i = 2; $i <= 5000; $i++) {
                     $sheet->getCell('B' . $i)->getDataValidation()
                         ->setType(DataValidation::TYPE_DATE)
                         ->setErrorStyle(DataValidation::STYLE_STOP)
@@ -120,7 +120,7 @@ class MADExport implements FromCollection, WithHeadings, WithEvents
                 $namaSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
                 
                 // Set data validation for Nama Karyawan column
-                for ($i = 2; $i <= 100000; $i++) {
+                for ($i = 2; $i <= 5000; $i++) {
                     $sheet->getCell('A' . $i)->getDataValidation()
                         ->setType(DataValidation::TYPE_LIST)
                         ->setErrorStyle(DataValidation::STYLE_STOP)

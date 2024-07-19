@@ -30,6 +30,7 @@ class TemplateKaryawan implements FromCollection, WithHeadings, WithEvents
             'Bagian',
             'Leader',
             'Status',
+            'Tanggal Bergabung',
         ];
     }
 
@@ -45,7 +46,7 @@ class TemplateKaryawan implements FromCollection, WithHeadings, WithEvents
             AfterSheet::class => function (AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
                 
-                $event->sheet->getStyle('1:100000')->getProtection()->setLocked(false);
+                $event->sheet->getStyle('1:5000')->getProtection()->setLocked(false);
                 $sheet->getStyle('A1:XFD1')->getProtection()->setLocked(Protection::PROTECTION_PROTECTED);
     
                 $sheet->getProtection()->setSheet(true);
@@ -62,7 +63,7 @@ class TemplateKaryawan implements FromCollection, WithHeadings, WithEvents
                 $sheet->getProtection()->setPivotTables(false);
                 $sheet->getProtection()->setObjects(false);
                 $sheet->getProtection()->setScenarios(false);
-                
+    
                 // Set column widths
                 $sheet->getColumnDimension('A')->setWidth(20);
                 $sheet->getColumnDimension('B')->setWidth(20);
@@ -76,10 +77,37 @@ class TemplateKaryawan implements FromCollection, WithHeadings, WithEvents
                 $sheet->getColumnDimension('J')->setWidth(20);
                 $sheet->getColumnDimension('K')->setWidth(20);
                 $sheet->getColumnDimension('L')->setWidth(20);
-              
+                $sheet->getColumnDimension('M')->setWidth(20);
+                
+    
                 // Format 'Management Fee (%)' column as percentage
-                $sheet->getStyle('J2:J100000')->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_PERCENTAGE_00);
-              
+                for ($i = 2; $i <= 5000; $i++) {
+                    $sheet->getCell('H' . $i)->getDataValidation()
+                    ->setType(DataValidation::TYPE_DECIMAL)
+                    ->setErrorStyle(DataValidation::STYLE_STOP)
+                    ->setAllowBlank(true)
+                    ->setShowInputMessage(true)
+                    ->setShowErrorMessage(true)
+                    ->setErrorTitle('Invalid Percentage')
+                    ->setError('The percentage is not valid.')
+                    ->setFormula1('0.00')
+                    ->setFormula2('1.00');
+                    $sheet->getStyle('H' . $i)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_PERCENTAGE_00);
+                
+                    $sheet->getCell('M' . $i)->getDataValidation()
+                        ->setType(DataValidation::TYPE_DATE)
+                        ->setErrorStyle(DataValidation::STYLE_STOP)
+                        ->setAllowBlank(true)
+                        ->setShowInputMessage(true)
+                        ->setShowErrorMessage(true)
+                        ->setErrorTitle('Invalid Date')
+                        ->setError('The date is not valid.')
+                        ->setFormula1('DATE(1900,1,1)');
+                    $sheet->getStyle('M' . $i)->getNumberFormat()->setFormatCode(\PhpOffice\PhpSpreadsheet\Style\NumberFormat::FORMAT_DATE_DDMMYYYY);
+    
+                }
+                
+    
                 // Create hidden sheet for data validation list
                 $spreadsheet = $sheet->getParent();
                 $hiddenSheet = new Worksheet($spreadsheet, 'HiddenSheet');
@@ -110,7 +138,7 @@ class TemplateKaryawan implements FromCollection, WithHeadings, WithEvents
                 $validationUnitKerja->setFormula1('HiddenSheet!$A$1:$A$' . count($penempatan));
                 
                 // Apply the validation to the desired range for Unit Kerja Penempatan
-                for ($i = 2; $i <= 100000; $i++) {
+                for ($i = 2; $i <= 5000; $i++) {
                     $sheet->getCell('F' . $i)->setDataValidation(clone $validationUnitKerja);
                 }
                 
@@ -125,12 +153,13 @@ class TemplateKaryawan implements FromCollection, WithHeadings, WithEvents
                 $validationPosisi->setFormula1('HiddenSheet!$B$1:$B$' . count($posisi));
                 
                 // Apply the validation to the desired range for Posisi
-                for ($i = 2; $i <= 100000; $i++) {
+                for ($i = 2; $i <= 5000; $i++) {
                     $sheet->getCell('G' . $i)->setDataValidation(clone $validationPosisi);
                 }
                 
                 $hiddenSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
             }
         ];
-    }    
+    }
+    
 }

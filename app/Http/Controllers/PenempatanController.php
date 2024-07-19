@@ -1,10 +1,11 @@
 <?php
-
 namespace App\Http\Controllers;
 
 use App\Exports\TemplatePenempatan;
 use App\Imports\PenempatanImport;
+use App\Models\Divisi;
 use App\Models\Karyawan;
+use App\Models\Organisasi;
 use App\Models\Penempatan;
 use Illuminate\Http\Request;
 use Maatwebsite\Excel\Facades\Excel;
@@ -22,13 +23,12 @@ class PenempatanController extends Controller
 
         try {
             $file = $request->file('file');
-
             $reader = Excel::toArray([], $file);
             $headingRow = $reader[0][0];
 
             $expectedHeaders = [
                 'Kode Orange',
-                'Wilayah',
+                'Organisasi',
                 'Divisi',
                 'KCU Induk',
                 'Nama Unit Kerja Penempatan',
@@ -36,17 +36,37 @@ class PenempatanController extends Controller
                 'RCC Pembayaran untuk Vendor MAD',
                 'Singkatan Divisi',
                 'Kode SLID',
-
             ];
     
             if ($headingRow !== $expectedHeaders) {
                 throw new \Exception("File tidak sesuai.");
             }
+
             $data = Excel::toCollection(new PenempatanImport, $file);
 
-            if ($data->isEmpty() || $data->first()->isEmpty()) {
-                throw new \Exception("File harus diisi.");
+            // Filter baris yang hanya berisi nilai null
+            $filteredData = $data->map(function ($sheet) {
+                return $sheet->filter(function ($row) {
+                    return $row->filter(function ($value) {
+                        return !is_null($value);
+                    })->isNotEmpty();
+                });
+            });
+                        
 
+            if ($filteredData->isEmpty() || $filteredData->first()->isEmpty()) {
+                throw new \Exception("File harus diisi.");
+            }
+            $hasData = false;
+            foreach ($data->first() as $row) {
+                if ($row->filter()->isNotEmpty()) {
+                    $hasData = true;
+                    break;
+                }
+            }
+            
+            if (!$hasData) {
+                throw new \Exception("File harus diisi.");
             }
             // Lakukan impor
             Excel::import(new PenempatanImport, $file);
@@ -69,6 +89,8 @@ class PenempatanController extends Controller
     public function index()
     {
         $penempatan = Penempatan::orderBy('created_at','desc')->get();
+        
+        
         return view('penempatan.index',[
             'penempatan' => $penempatan,
         ]);
@@ -79,7 +101,14 @@ class PenempatanController extends Controller
      */
     public function create()
     {
-        return view('penempatan.create');
+        $organisasi = Organisasi::all()->sortBy('name');
+
+        $divisi = Divisi::all()->sortBy('name');
+
+        return view('penempatan.create',[
+            'organisasi' => $organisasi,
+            'divisi' => $divisi,
+        ]);
     }
 
     /**
@@ -87,21 +116,34 @@ class PenempatanController extends Controller
      */
     public function store(Request $request)
     {
-      
-        $canhitung = $request->has('flexCheckIndeterminate');
+
+        $loggedInUser = auth()->user();
+        $loggedInUsername = $loggedInUser->nama_user; 
+        // $canhitung = $request->has('flexCheckIndeterminate');
         
-        if($canhitung == true){
-            $hitungtunjangan ="Yes";
+        // if($canhitung == true){
+        //     $hitungtunjangan ="Yes";
+        // } else if($canhitung == false) {
+        //     $hitungtunjangan ="No";
+        // }
 
-        } else if($canhitung == false) {
-            $hitungtunjangan ="No";
-        }
 
-       
+        
+
+        $organisasiid = $request->organisasi_id;
+        $divisid = $request->divisi_id;
+
         $kodeorange = $request->kode_orange;
         $namaunit = $request -> nama_unit_kerja;
-        $wilayah = $request -> wilayah;
-        $divisi = $request -> divisi;
+      
+        $existingunit = Penempatan::where('nama_unit_kerja', $namaunit)->first();
+
+        if ($existingunit) {
+            // Jika organisasi sudah ada, tampilkan pesan error
+            $request->session()->flash('error', "Penempatan sudah terdaftar.");
+            return redirect()->route('penempatan');
+        }
+
         $kcuinduk = $request -> kcu_induk;
         $kodecabang = $request -> kode_cabang_pembayaran;
         $rcc = $request -> rcc_pembayaran;
@@ -111,15 +153,16 @@ class PenempatanController extends Controller
         Penempatan::create([
             'kode_orange' => $kodeorange,
             'nama_unit_kerja' => $namaunit,
-            'wilayah' => $wilayah,
-            'divisi' => $divisi,
+            'created_by' => $loggedInUsername,
             'kcu_induk' => $kcuinduk,
             'kode_cabang_pembayaran' => $kodecabang,
             'rcc_pembayaran' => $rcc,
             'singkatan_divisi' => $singkatan,
-            'kode_slid' => $slid,
-            'hitung_tunjangan' => $hitungtunjangan,
+            'kode_slid' => $slid,           
+            'divisi_id' => $divisid,
+            'organisasi_id' => $organisasiid,
         ]);
+        
         $request->session()->flash('success', 'Penempatan berhasil ditambahkan.');
 
         return redirect(route('penempatan'));
@@ -132,9 +175,14 @@ class PenempatanController extends Controller
     public function show(string $id)
     {
         $data = Penempatan::find($id);
+        $organisasi = Organisasi::all()->sortBy('name');
+
+        $divisi = Divisi::all()->sortBy('name');
 
         return view('penempatan.edit',[
             'data'=> $data,
+            'organisasi' => $organisasi,
+            'divisi' => $divisi,
         ]);
       
     }
@@ -153,25 +201,41 @@ class PenempatanController extends Controller
     public function update(Request $request, string $id)
     {
        
-        $canhitung = $request->has('flexCheckIndeterminate');
+        // $canhitung = $request->has('flexCheckIndeterminate');
         
-        if($canhitung == true){
-            $hitungtunjangan ="Yes";
+        // if($canhitung == true){
+        //     $hitungtunjangan ="Yes";
 
-        } else if($canhitung == false) {
-            $hitungtunjangan ="No";
+        // } else if($canhitung == false) {
+        //     $hitungtunjangan ="No";
+        // }
+        $loggedInUser = auth()->user();
+        $loggedInUsername = $loggedInUser->nama_user; 
+
+        $namaunit = $request -> nama_unit_kerja;
+      
+        $existingunit = Penempatan::where('nama_unit_kerja', $namaunit)
+        ->where('id', '!=', $id)
+        ->first();
+
+        if ($existingunit) {
+            // Jika organisasi sudah ada, tampilkan pesan error
+            $request->session()->flash('error', "Penempatan sudah terdaftar.");
+            return redirect()->route('penempatan');
         }
+
         $data = Penempatan::find($id);
         $data -> kode_orange = $request -> kode_orange;
         $data -> nama_unit_kerja = $request->nama_unit_kerja;
-        $data -> wilayah = $request->wilayah;
-        $data -> divisi = $request->divisi;
+        $data -> divisi_id = $request->divisi_id;
+        $data -> organisasi_id = $request->organisasi_id;
         $data -> kcu_induk = $request->kcu_induk;
         $data -> kode_cabang_pembayaran = $request->kode_cabang_pembayaran;
         $data -> rcc_pembayaran = $request -> rcc_pembayaran;
         $data -> singkatan_divisi = $request -> singkatan_divisi;
         $data -> kode_slid = $request -> kode_slid;
-        $data -> hitung_tunjangan = $hitungtunjangan;
+        $data -> updated_by = $loggedInUsername;
+     
 
         $data -> save();
         $request->session()->flash('success', 'Penempatan berhasil diubah.');

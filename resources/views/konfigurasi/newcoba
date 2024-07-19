@@ -1,0 +1,219 @@
+@extends('layouts.app')
+@section('content')
+<div class="main-panel">
+    <div class="content-wrapper">
+        <div class="row">
+            <div class="col-md-12 grid-margin">
+
+                <div class="row">
+                    <div class="col-12 col-xl-8 mb-4 mb-xl-0">
+                        <h3 class="font-weight-bold">Tambah Konfigurasi</h3>
+                    </div>            
+                </div>
+
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <form name="saveform" action="{{route('konfigurasi.store')}}" method="post" onsubmit="return validateForm()">
+                            @csrf
+
+                            <div class="form-group mb-4">
+                                <label for="organisasi" class="form-label" style="color:black; font-weight:bold;">Organisasi</label>
+                                <select name="organisasi_id" id="organisasi" class="form-control form-select-lg mb-3" aria-label=".form-select-lg example" style="color:black;">
+                                    <option value="" selected disabled>Pilih Organisasi</option>
+                                    @foreach ($organisasi as $item)
+                                        <option value="{{$item->id}}">{{$item->organisasi}}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="form-group mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="selectAllPenempatan" name="selectAllPenempatan">
+                                    <label class="form-check-label" for="selectAllPenempatan" style="color:black;font-weight:bold;">
+                                        Pilih Seluruh Penempatan
+                                    </label>
+                                </div>
+                            </div>
+
+                            <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+                            <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.1.0-beta.1/js/select2.min.js"></script>
+
+                            <script>
+                                $(document).ready(function() {
+                                    $('#organisasi').select2();
+
+                                    $('#organisasi').on('change', function() {
+                                        var organisasiID = $(this).val();
+                                        if(organisasiID) {
+                                            $.ajax({
+                                                url: '/getPenempatan/'+organisasiID,
+                                                type: "GET",
+                                                dataType: "json",
+                                                success:function(data) {
+                                                    $('#penempatan').empty();
+                                                    $('#penempatan').append('<option value="" disabled selected>Pilih Penempatan</option>'); 
+
+                                                    if(data.length > 0) {
+                                                        $('#penempatan').append('<option value="all">Pilih Seluruh Penempatan</option>');
+                                                    }
+
+                                                    $.each(data, function(key, value) {
+                                                        $('#penempatan').append('<option value="'+ value.id +'">'+ value.nama_unit_kerja +'</option>');
+                                                    });
+                                                    $('#penempatan').select2();
+                                                }
+                                            });
+                                        } else {
+                                            $('#penempatan').empty();
+                                        }
+                                    });
+
+                                    $('#selectAllPenempatan').on('change', function() {
+                                        if(this.checked) {
+                                            $('#penempatan').val(null).trigger('change');
+                                            $('#penempatan').prop('disabled', true);
+
+                                            $.ajax({
+                                                url: '/getPenempatan/' + $('#organisasi').val(),
+                                                type: "GET",
+                                                dataType: "json",
+                                                success:function(data) {
+                                                    $('#allPenempatanContainer').empty();
+                                                    $.each(data, function(key, value) {
+                                                        $('#allPenempatanContainer').append(`
+                                                            <div class="form-check">
+                                                                <input class="form-check-input exclude-penempatan" type="checkbox" value="${value.id}" id="exclude_${value.id}" name="excludePenempatan[]">
+                                                                <label class="form-check-label" for="exclude_${value.id}">
+                                                                    ${value.nama_unit_kerja}
+                                                                </label>
+                                                            </div>
+                                                        `);
+                                                    });
+                                                }
+                                            });
+                                            $('#allPenempatan').show();
+                                        } else {
+                                            $('#penempatan').prop('disabled', false);
+                                            $('#allPenempatan').hide();
+                                        }
+                                    });
+                                });
+                            </script>
+
+                            <div class="form-group mb-4">
+                                <label for="penempatan" class="form-label" style="color:black;font-weight:bold;">Penempatan</label>
+                                <select name="penempatan_id" id="penempatan" class="form-control form-select-lg mb-3" aria-label=".form-select-lg example" style="color:black;">
+                                    <option value="" selected disabled>Pilih Penempatan</option>
+                                </select>
+                            </div>
+
+                            <div id="allPenempatan" style="display:none;" class="mb-4">
+                                <label style="color:black;font-weight:bold;">Kecualikan Penempatan</label>
+                                <div id="allPenempatanContainer"></div>
+                            </div>
+
+                            <div class="card shadow mb-4">
+                                <div class="card-header py-3">
+                                    <h4 class="m-0 font-weight-bold text-primary">Pengaturan Konfigurasi</h4>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label for="hitungTunjangan" style="font-weight:bold;">Tunjangan</label>
+                                        <div class="form-check ml-4">
+                                            <input class="form-check-input" type="checkbox" id="hitungTunjangan" name="hitungtunjangan">
+                                            <label class="form-check-label" for="hitungTunjangan">
+                                                Hitung Tunjangan
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group mt-4">
+                                        <label for="perhitunganPayroll" style="font-weight:bold;">Perhitungan Payroll</label>
+                                        <div class="form-check ml-4">
+                                            <input class="form-check-input" type="radio" name="perhitunganpayroll" id="harikerja" value="harikerja">
+                                            <label class="form-check-label" for="harikerja">
+                                                Hari Kerja
+                                            </label>
+                                        </div>
+                                        <div class="form-check ml-4">
+                                            <input class="form-check-input" type="radio" name="perhitunganpayroll" id="calendar" value="kalender">
+                                            <label class="form-check-label" for="calendar">
+                                                Kalender
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="form-group mb-4">
+                                <button type="submit" class="btn btn-primary btn-fw">Simpan</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function validateForm() {
+    let organisasi = document.forms["saveform"]["organisasi_id"].value;
+    let penempatan = document.forms["saveform"]["penempatan_id"].value;
+    let hitungTunjangan = document.forms["saveform"]["hitungtunjangan"].checked;
+    let perhitunganPayrollHariKerja = document.forms["saveform"]["perhitunganpayroll"][0].checked;
+    let perhitunganPayrollKalender = document.forms["saveform"]["perhitunganpayroll"][1].checked;
+    let selectAllPenempatan = document.forms["saveform"]["selectAllPenempatan"].checked;
+    let excludePenempatan = document.forms["saveform"]["excludePenempatan[]"];
+    
+    if (organisasi == "" || organisasi=="Pilih Organisasi") {
+        alert("Organisasi harus diisi.");
+        return false;
+    } else if (!selectAllPenempatan && (penempatan == "" || penempatan=="Pilih Penempatan")) {
+        alert("Penempatan harus diisi.");
+        return false;
+    } else if (selectAllPenempatan && !excludePenempatan.length) {
+        alert("Harus ada setidaknya satu penempatan yang dipilih.");
+        return false;
+    } else if (!perhitunganPayrollHariKerja && !perhitunganPayrollKalender) {
+        alert("Perhitungan payroll harus diisi.");
+        return false;
+    }
+}
+</script>
+
+<style>
+    /* Customize the Select2 container */
+    .select2-container .select2-selection--single {
+        height: 45px; /* Match the height of your form-control */
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+
+    /* Customize the placeholder text */
+    .select2-container .select2-selection--single .select2-selection__placeholder {
+        color: #6c757d;
+        line-height: 50px; /* Match the height of your form-control */
+    }
+
+    /* Customize the selected value */
+    .select2-container .select2-selection--single .select2-selection__rendered {
+        line-height: 50px; /* Match the height of your form-control */
+        margin-top: -19px;
+        margin-left: -15px;
+        color: black;
+    }
+
+    /* Customize the dropdown arrow */
+    .select2-container .select2-selection--single .select2-selection__arrow {
+        height: 50px; /* Match the height of your form-control */
+    }
+
+    /* Customize the dropdown menu */
+    .select2-container .select2-dropdown {
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+</style>
+
+@endsection

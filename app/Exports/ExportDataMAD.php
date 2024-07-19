@@ -1,9 +1,7 @@
 <?php
 namespace App\Exports;
 
-use App\Models\Mad;
-use Carbon\Carbon;
-use Maatwebsite\Excel\Concerns\FromQuery;
+use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -11,30 +9,18 @@ use Maatwebsite\Excel\Concerns\WithTitle;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Events\AfterSheet;
 
-class ExportDataMAD implements FromQuery, WithHeadings, WithMapping, WithEvents, WithTitle, ShouldAutoSize
+class ExportDataMAD implements FromCollection, WithHeadings, WithMapping, WithEvents, WithTitle, ShouldAutoSize
 {
-    protected $month;
-    protected $year;
+    protected $data;
 
-    public function __construct($month, $year)
+    public function __construct($data)
     {
-        $this->month = $month;
-        $this->year = $year;
+        $this->data = $data;
     }
 
-    public function query()
+    public function collection()
     {
-        $query = Mad::query();
-
-        if ($this->month) {
-            $query->whereMonth('tanggal_lembur', $this->month);
-        }
-
-        if ($this->year) {
-            $query->whereYear('tanggal_lembur', $this->year);
-        }
-
-        return $query;
+        return collect($this->data);
     }
 
     public function headings(): array
@@ -75,43 +61,45 @@ class ExportDataMAD implements FromQuery, WithHeadings, WithMapping, WithEvents,
 
     public function map($item): array
     {
-        $formattedDate = Carbon::parse($item->tanggal_lembur)->format('d-F-Y');
+        
         return [
-            $item->karyawan->no_amandemen,
-            $item->karyawan->nik_ktp,
-            $item->karyawan->nama_karyawan,
-            $item->karyawan->penempatan->nama_unit_kerja,
-            $item->karyawan->posisi->posisi,
-            $item->karyawan->penempatan->kode_cabang_pembayaran,
-            $item->karyawan->penempatan->rcc_pembayaran,
-            $formattedDate,
-            $item->jenis_hari,
-            $item->jenis_hari == "Kerja" ? "K" : ($item->jenis_hari == "Libur" ? "L" : ""),
-            $item->gaji,
-            $item->tunjangan,
-            $item->jam_mulai,
-            $item->jam_selesai,
-            $item->jumlah_jam_lembur,
-            $item->jam_pertama ?: '0',
-            $item->jam_kedua ?: '0',
-            $item->jam_ketiga ?: '0',
-            $item->jam_keempat ?: '0',
-            $item->biaya_jam_pertama,
-            $item->biaya_jam_kedua, 
-            $item->biaya_jam_ketiga, 
-            $item->biaya_jam_keempat, 
-            $item->subtotal, 
-            $item->karyawan->management_fee * 100,
-            $item->management_fee_amount, 
-            $item->total_sebelum_ppn, 
-            $item->keterangan_lembur,
-            $item->keterangan_perbaikan,
-            $item->karyawan->penempatan->kode_slid,
+            $item['no_amandemen'],
+            $item['nik'],
+            $item['nama_karyawan'],
+            $item['nama_penempatan'],
+            $item['nama_posisi'],
+            $item['kodepembayaran'],
+            $item['rcc'],
+            $item['tanggal_lembur'],
+            $item['jenis_hari'],
+            $item['jenis_hari'] == "Kerja" ? "K" : ($item['jenis_hari'] == "Libur" ? "L" : ""),
+            $item['upah'],
+            $item['tunjanganamount'],
+            $item['jam_mulai'],
+            $item['jam_selesai'],
+            $item['jumlah_jam_lembur'],
+            $item['jam_pertama'] ?: '0',
+            $item['jam_kedua'] ?: '0',
+            $item['jam_ketiga'] ?: '0',
+            $item['jam_keempat'] ?: '0',
+            $item['biaya_jam_pertama'],
+            $item['biaya_jam_kedua'], 
+            $item['biaya_jam_ketiga'], 
+            $item['biaya_jam_keempat'], 
+            $item['subtotal'], 
+            $item['management_fee'] * 100,
+            $item['amount_management'], 
+            $item['total_sebelum_ppn'], 
+            $item['keterangan_lembur'],
+            $item['keterangan_perbaikan'],
+            $item['kodeslid'],
         ];
     }
 
     public function registerEvents(): array
     {
+
+        
         return [
             AfterSheet::class => function(AfterSheet $event) {
                 $sheet = $event->sheet->getDelegate();
@@ -132,7 +120,7 @@ class ExportDataMAD implements FromQuery, WithHeadings, WithMapping, WithEvents,
                     11 => 'November',
                     12 => 'Desember',
                 ];
-                $monthName = $months[(int)$this->month];
+                $monthName = $months[(int) $this->month];
                 $sheet->setCellValue('A5', 'Periode: ' . $monthName . ' ' . $this->year); // Menulis periode pada baris A5
                 $sheet->getStyle('A7:AD7')->getFont()->setBold(true); // Membuat heading menjadi bold
                 
@@ -165,49 +153,12 @@ class ExportDataMAD implements FromQuery, WithHeadings, WithMapping, WithEvents,
                 }
 
                 // Apply yellow background color to the entire row
-                $highestColumn = 'AA'; // Adjust this to your highest column that needs coloring
-                $range = 'A' . $sumRow . ':' . $highestColumn . $sumRow;
-                $sheet->getStyle($range)->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
-                                                   ->getStartColor()->setARGB('FFFF00');
-
-                // Set the currency format for the columns
-                $currencyColumns = ['T', 'U', 'V', 'W', 'X', 'Z', 'AA'];
-                foreach ($currencyColumns as $column) {
-                    $sheet->getStyle($column . '8:' . $column . $sumRow)
-                          ->getNumberFormat()
-                          ->setFormatCode('"Rp"#,##0');
-                }
-
-                $sheet->setCellValue('Z' . ($lastRow + 2), 'Total');
-                $sheet->setCellValue('Z' . ($lastRow + 3), 'PPN');
-                $sheet->setCellValue('Z' . ($lastRow + 4), 'Subtotal');
-
-                // Membuat teks di sel Z bold
-                $sheet->getStyle('Z' . ($lastRow + 2))->applyFromArray(['font' => ['bold' => true]]);
-                $sheet->getStyle('Z' . ($lastRow + 3))->applyFromArray(['font' => ['bold' => true]]);
-                $sheet->getStyle('Z' . ($lastRow + 4))->applyFromArray(['font' => ['bold' => true]]);
-
-                $sheet->setCellValue('AA' . ($lastRow + 2), '=AA' . ($lastRow + 1)); // Total
-                $sheet->setCellValue('AA' . ($lastRow + 3), '=ROUND(AA' . ($lastRow + 1) . '*0.11, 0)'); // PPN
-                $sheet->setCellValue('AA' . ($lastRow + 4), '=AA' . ($lastRow + 2) . '+AA' . ($lastRow + 3)); // Subtotal
-
-                $currencyColumns = ['AA' . ($lastRow + 2), 'AA' . ($lastRow + 3), 'AA' . ($lastRow + 4)];
-                foreach ($currencyColumns as $cell) {
-                    $sheet->getStyle($cell)->getNumberFormat()->setFormatCode('"Rp"#,##0');
-                }
-
-
-                $sheet->setCellValue('A' . ($lastRow + 7), 'Dibuat Oleh, ');
-                $sheet->setCellValue('C' . ($lastRow + 7), 'Mengetahui, ');
-
-                $sheet->setCellValue('A' . ($lastRow + 12), 'Sondang Esteria Resta');
-                $sheet->setCellValue('C' . ($lastRow + 12), 'Cynthia Widjaja');
-                
-                // Set alignment to left for the item columns
-                $columnsToAlignLeft = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 'AA'];
-                foreach ($columnsToAlignLeft as $column) {
-                    $sheet->getStyle($column . '8:' . $column . $sumRow)->getAlignment()->setHorizontal(\PhpOffice\PhpSpreadsheet\Style\Alignment::HORIZONTAL_LEFT);
-                }
+                $sheet->getStyle('A' . $sumRow . ':AD' . $sumRow)->applyFromArray([
+                    'fill' => [
+                        'fillType' => \PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID,
+                        'color' => ['rgb' => 'FFFF00']
+                    ]
+                ]);
             }
         ];
     }

@@ -56,13 +56,16 @@
 
 function validateForm() {
     
-    let namauser = document.forms["saveform"]["nama_user"].value;
-    let email =document.forms["saveform"]["email"].value;
+  let namauser = document.forms["saveform"]["nama_user"].value.trim();
+  let email = document.forms["saveform"]["email"].value.trim();
 
     if (namauser == "" ) {
     alert("Nama user harus diisi.");
     return false;
-  }else if(email == ""){
+  }else if (namauser.length > 30) {
+        alert("Nama user tidak boleh lebih dari 30 karakter.");
+        return false;
+    }else if(email == ""){
     alert("Email harus diisi.");
     return false;
   }

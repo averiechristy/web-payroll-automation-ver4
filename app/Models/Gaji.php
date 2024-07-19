@@ -10,13 +10,16 @@ class Gaji extends Model
     use HasFactory;
 
     protected $fillable = [
-    'karyawan_id',
-    'tunjangan',
+     'karyawan_id',
+     'tunjangan',
      'gaji',
      'tanggal_mulai_gaji',
      'tanggal_selesai_gaji',
      'tanggal_mulai_tunjangan',
      'tanggal_selesai_tunjangan',
+     'created_by',
+     'updated_by',
+     
     ];
 
     public function karyawan()

@@ -2,6 +2,8 @@
 
 namespace App\Exports;
 
+use App\Models\Divisi;
+use App\Models\Organisasi;
 use App\Models\Supplier;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithEvents;
@@ -21,7 +23,7 @@ class TemplatePenempatan implements FromCollection, WithHeadings, WithEvents
     {
         return [
           'Kode Orange',
-          'Wilayah',
+          'Organisasi',
           'Divisi',
           'KCU Induk',
           'Nama Unit Kerja Penempatan',
@@ -71,7 +73,57 @@ class TemplatePenempatan implements FromCollection, WithHeadings, WithEvents
                 $sheet->getColumnDimension('G')->setWidth(20);
                 $sheet->getColumnDimension('H')->setWidth(20);
                 $sheet->getColumnDimension('I')->setWidth(20);
-               
+             
+                $spreadsheet = $sheet->getParent();
+                $hiddenSheet = new Worksheet($spreadsheet, 'HiddenSheet');
+                $spreadsheet->addSheet($hiddenSheet);
+
+
+                $organisasi = Organisasi::pluck('organisasi')->toArray();
+                $divisi = Divisi::pluck('divisi')->toArray(); // Assuming you have a model for Posisi
+                
+                // Write penempatan values to hidden sheet
+                foreach ($organisasi as $index => $value) {
+                    $hiddenSheet->setCellValue('A' . ($index + 1), $value);
+                }
+                
+                // Write posisi values to hidden sheet
+                foreach ($divisi as $index => $value) {
+                    $hiddenSheet->setCellValue('B' . ($index + 1), $value);
+                }
+                
+                // Apply data validation for Unit Kerja Penempatan
+                $validationUnitKerja = new DataValidation();
+                $validationUnitKerja->setType(DataValidation::TYPE_LIST);
+                $validationUnitKerja->setErrorStyle(DataValidation::STYLE_STOP);
+                $validationUnitKerja->setAllowBlank(false);
+                $validationUnitKerja->setShowInputMessage(true);
+                $validationUnitKerja->setShowErrorMessage(true);
+                $validationUnitKerja->setShowDropDown(true);
+                $validationUnitKerja->setFormula1('HiddenSheet!$A$1:$A$' . count($organisasi));
+                
+                // Apply the validation to the desired range for Unit Kerja Penempatan
+                for ($i = 2; $i <= 5000; $i++) {
+                    $sheet->getCell('B' . $i)->setDataValidation(clone $validationUnitKerja);
+                }
+                
+                // Apply data validation for Posisi
+                $validationPosisi = new DataValidation();
+                $validationPosisi->setType(DataValidation::TYPE_LIST);
+                $validationPosisi->setErrorStyle(DataValidation::STYLE_STOP);
+                $validationPosisi->setAllowBlank(false);
+                $validationPosisi->setShowInputMessage(true);
+                $validationPosisi->setShowErrorMessage(true);
+                $validationPosisi->setShowDropDown(true);
+                $validationPosisi->setFormula1('HiddenSheet!$B$1:$B$' . count($divisi));
+                
+                // Apply the validation to the desired range for Posisi
+                for ($i = 2; $i <= 5000; $i++) {
+                    $sheet->getCell('C' . $i)->setDataValidation(clone $validationPosisi);
+                }
+                
+                $hiddenSheet->setSheetState(Worksheet::SHEETSTATE_HIDDEN);
+
             }
 
         ];

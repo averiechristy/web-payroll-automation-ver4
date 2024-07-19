@@ -38,19 +38,23 @@ class UserController extends Controller
         $nama = $request->nama_user;
         $email = $request->email;
 
+        $loggedInUser = auth()->user();
+        $loggedInUsername = $loggedInUser->nama_user; 
+
 
 $existingdata = User::where('email', $email)->first();
 
         if ($existingdata){
             $request->session()->flash('error', "Email sudah terdaftar.");
 
-            return redirect()->route('holiday');
+            return redirect()->route('user');
         }
 
         User::create([
 
             'nama_user' => $nama,
             'email' => $email,
+            'created_by' => $loggedInUsername,
             'password' => Hash::make('12345678'),
 
         ]);
@@ -86,9 +90,12 @@ $existingdata = User::where('email', $email)->first();
      */
     public function update(Request $request, string $id)
     {
+
         $data = User::find($id);
 
-        
+        $loggedInUser = auth()->user();
+        $loggedInUsername = $loggedInUser->nama_user; 
+      
        
         $nama = $request -> nama_user;
         $email = $request -> email;
@@ -97,14 +104,16 @@ $existingdata = User::where('email', $email)->first();
 
 if ($existingdata) {
     $request->session()->flash('error', "Email sudah terdaftar.");
-
-    return redirect()->route('holiday');
+    return redirect()->route('user');
 }
-
 
         $data -> nama_user = $nama;
         $data -> email = $email;
         $data -> save();
+        $data -> updated_by = $loggedInUsername;
+
+        $data->save();
+
         $request->session()->flash('success', 'User berhasil diubah.');
 
         return redirect(route('user'));
@@ -117,6 +126,8 @@ if ($existingdata) {
     public function destroy(Request $request, $id)
     {
         $useraccount = User::find($id);
+
+    
 
         if ($useraccount->id === Auth::id()) {
             return redirect()->route('user')->with('error', 'Tidak dapat menghapus akun anda sendiri.');

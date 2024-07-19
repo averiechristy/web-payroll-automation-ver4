@@ -40,6 +40,9 @@ class PosisiImport implements ToModel, WithStartRow, WithHeadingRow
             'standarisasi_upah',
            
         ];
+
+        $loggedInUser = auth()->user();
+        $loggedInUsername = $loggedInUser->nama_user;  
     
         // Check if headers match the expected headers
         $diff = array_diff($expectedHeaders, array_keys($row));
@@ -47,7 +50,27 @@ class PosisiImport implements ToModel, WithStartRow, WithHeadingRow
             throw new Exception("File tidak sesuai");
         }
 
+
+        $kodeorange = trim($row['kode_orange']);
+
+        if (empty($kodeorange)) {
+            throw new Exception("Kode Orange harus diisi.");
+        }
+
+        $jeniskerja = trim( $row['jenis_pekerjaan']);
+
+
+  if (empty($jeniskerja)) {
+            throw new Exception("Jenis Pekerjaan harus diisi.");
+        }
       
+        $posisi = trim( $row['posisi']);
+
+        if (empty($posisi)) {
+            throw new Exception("Posisi harus diisi.");
+        }
+      
+
         $upah = $row['standarisasi_upah'];
 
         if (!is_numeric($row['standarisasi_upah'])) {
@@ -55,8 +78,9 @@ class PosisiImport implements ToModel, WithStartRow, WithHeadingRow
         }
     
 
+        
   
-        $existingProduct = Penempatan::where('kode_orange', $row['kode_orange'])->first();
+        $existingProduct = Posisi::where('posisi', $row['posisi'])->first();
        
 
         if($existingProduct) {
@@ -72,10 +96,11 @@ class PosisiImport implements ToModel, WithStartRow, WithHeadingRow
 
         return new Posisi([
             'id' => $this->lastId,
-            'kode_orange' => $row['kode_orange'],
-            'jenis_pekerjaan' => $row['jenis_pekerjaan'],
-            'posisi' => $row['posisi'],
-            'standarisasi_upah' => $row['standarisasi_upah'],
+            'kode_orange' => trim($row['kode_orange']),
+            'jenis_pekerjaan' =>trim( $row['jenis_pekerjaan']),
+            'posisi' => trim($row['posisi']),
+            'standarisasi_upah' =>trim( $row['standarisasi_upah']),
+            'created_by' => $loggedInUsername,
         ]);
 
     }

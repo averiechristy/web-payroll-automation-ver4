@@ -1,0 +1,40 @@
+
+            $detail['no_amandemen'],
+            $detail['nik'],
+                $detail['nama_karyawan'],
+                $detail['nama_penempatan'],
+                $detail['nama_posisi'],
+                $detail['kodepembayaran'],
+                $detail['rcc'],
+                $detail['tanggal_lembur'],
+                $detail['jenis_hari'],
+                @if ($detail['jenis_hari'] == "Kerja")
+                K
+                @elseif ($detail['jenis_hari'] == "Libur")
+L
+                @endif
+
+$detail['upah'],
+$detail['tunjanganamount'],
+$detail['jam_mulai'],
+$detail['jam_selesai'],
+                $detail['jumlah_jam_lembur'],
+           
+                $detail['jam_pertama'],
+                $detail['jam_kedua'],
+                $detail['jam_ketiga'],
+                $detail['jam_keempat'],
+                 'Rp ' . number_format($lembur['biaya_jam_pertama'], 0, ',', '.'),
+
+               
+                 'Rp ' . number_format($lembur['biaya_jam_kedua'], 0, ',', '.'),
+                 'Rp ' . number_format($lembur['biaya_jam_ketiga'], 0, ',', '.'),
+                 'Rp ' . number_format($lembur['biaya_jam_keempat'], 0, ',', '.'),
+                 'Rp ' . number_format($lembur['subtotal'], 0, ',', '.'),
+                $detail['management_fee'] *100
+                 'Rp ' . number_format($lembur['amount_management'], 0, ',', '.'),
+                 'Rp ' . number_format($lembur['total_sebelum_ppn'], 0, ',', '.'),
+                
+                
+                $detail['kodeslid'],
+        

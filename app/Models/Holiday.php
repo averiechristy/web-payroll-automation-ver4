@@ -12,5 +12,6 @@ class Holiday extends Model
     protected $fillable = [
         'date',
         'description',
+        'pengecualian_organisasi',
     ];
 }

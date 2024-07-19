@@ -41,6 +41,7 @@ class MADImport implements ToModel, WithStartRow, WithHeadingRow,  WithMultipleS
     {           
         
 
+        
 $excelDate = $row['tanggal_lembur'];
 $excelTimeStart = $row['jam_mulai'];
 $excelTimeEnd =  $row['jam_selesai'];
@@ -50,11 +51,10 @@ $excelTimeEnd =  $row['jam_selesai'];
 // Konversi jam
 $timeStart = Carbon::createFromTime(0, 0, 0)->addMinutes($excelTimeStart * 24 * 60);
 $timeEnd = Carbon::createFromTime(0, 0, 0)->addMinutes($excelTimeEnd * 24 * 60);
-    
+  
 $formattedDate = $date->format('Y-m-d');
 $formattedTimeStart = $timeStart->format('H:i:s');
 $formattedTimeEnd = $timeEnd->format('H:i:s');
-
 
 $tanggalLembur = new DateTime($formattedDate);
 $hariDalamMinggu = $tanggalLembur->format('N'); // 1 = Senin, ..., 7 = Minggu
@@ -63,7 +63,6 @@ $hariDalamMinggu = $tanggalLembur->format('N'); // 1 = Senin, ..., 7 = Minggu
 $isWeekend = ($hariDalamMinggu >= 6);
 $dataholiday = Holiday::where('date', $tanggalLembur)->first();
       
-
 $statusHari = $dataholiday -> description;
 
 // Tentukan apakah hari libur atau hari kerja
@@ -84,6 +83,7 @@ $datakaryawan = Karyawan::find($karyawanid);
 
 $penempatanid = $datakaryawan->penempatan_id;
 $datapenempatan = Penempatan::find($penempatanid);
+
 
 
 
@@ -108,7 +108,6 @@ if($datapenempatan -> hitung_tunjangan == "Yes"){
 $upah = $gaji -> gaji;
 
 
-
 $tunjangan = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_tunjangan', '<=', $formattedDate)
     ->where('tanggal_selesai_tunjangan', '>=', $formattedDate)
     ->first();
@@ -118,7 +117,6 @@ $tunjangan = Gaji::where('karyawan_id', $karyawanid)->where('tanggal_mulai_tunja
         $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
         throw new Exception( "Tunjangan untuk karyawan $namaKaryawan belum ditambahkan.");
 
-       
     }
 
 $tunjanganamount = $tunjangan->tunjangan;
@@ -246,15 +244,22 @@ $biayajamkeempat = intval(round(($jamkeempat * 4 * $gajipokok) / 173));
 }
 
 $subtotal = $biayajampertama + $biayajamkedua + $biayajamketiga + $biayajamkeempat;
-dd($subtotal);
 
 $managementfee = $karyawan->management_fee;
 $amountmanagement = intval(round($managementfee  * $subtotal));
 
 $totalsebelumppn = $subtotal + $amountmanagement;
 
+
+$existingmad = MAD::where('tanggal_lembur', $formattedDate)->first();
+
+if ($existingmad) {
+    return null;
+}
+
         $this->lastId++;
 
+   
 
         return new MAD([
             'id' => $this->lastId,
@@ -274,7 +279,7 @@ $totalsebelumppn = $subtotal + $amountmanagement;
             'biaya_jam_keempat' => $biayajamkeempat,
             'subtotal' => $subtotal,
             'gaji' => $upah,
-            'tunjangan' => $tunjangan,
+            'tunjangan' => $tunjanganamount,
             'management_fee' => $managementfee,
             'management_fee_amount' => $amountmanagement,
             'total_sebelum_ppn' => $totalsebelumppn,

@@ -220,7 +220,7 @@ function validateForm() {
     alert("Tanggal selesai tunjangan harus diisi.");
     return false;
     } else if (mulaitunjangan == selesaitunjangan) {
-      alert("Tanggal mulai tunjangan tidak boleh lebih dari tanggal selesai tunjangan.");
+      alert("Tanggal mulai tunjangan tidak boleh sama dengan tanggal selesai tunjangan.");
       return false;
      }else if (mulaitunjangan > selesaitunjangan) {
       alert("Tanggal mulai tunjangan tidak boleh lebih dari tanggal selesai tunjangan.");

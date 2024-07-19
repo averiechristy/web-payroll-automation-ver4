@@ -20,6 +20,9 @@ class PosisiController extends Controller
          // Panggil class export Anda, sesuaikan dengan struktur data Anda
          return Excel::download(new TemplatePosisi(), 'templateposisi.xlsx');
     }
+
+
+    
     public function index()
     {
 
@@ -58,6 +61,18 @@ class PosisiController extends Controller
                 throw new \Exception("File harus diisi.");
 
             }
+
+            $hasData = false;
+            foreach ($data->first() as $row) {
+                if ($row->filter()->isNotEmpty()) {
+                    $hasData = true;
+                    break;
+                }
+            }
+            
+            if (!$hasData) {
+                throw new \Exception("File harus diisi.");
+            }
             // Lakukan impor
             Excel::import(new PosisiImport, $file);
     
@@ -88,13 +103,26 @@ class PosisiController extends Controller
         $kodeorange = $request->kode_orange;
         $jenis = $request->jenis_pekerjaan;
         $posisi = $request ->posisi;
+
+        $loggedInUser = auth()->user();
+        $loggedInUsername = $loggedInUser->nama_user;  
+
+        $existingposisi = Posisi::where('posisi', $posisi)->first();
+
+        if ($existingposisi) {
+            // Jika organisasi dengan nama yang sama sudah ada, tampilkan pesan error
+            $request->session()->flash('error', "Posisi sudah terdaftar.");
+            return redirect()->route('posisi');
+        }
+
         $standarisasi = $request -> standarisasi_upah;
 
         Posisi::create([
            'kode_orange' => $kodeorange,
            'jenis_pekerjaan' => $jenis,
            'posisi' => $posisi,
-           'standarisasi_upah' => $standarisasi 
+           'standarisasi_upah' => $standarisasi,
+           'created_by' => $loggedInUsername
         ]);
 
         $request->session()->flash('success', 'Posisi berhasil ditambahkan.');
@@ -127,10 +155,27 @@ class PosisiController extends Controller
      */
     public function update(Request $request, string $id)
     {
+
+        $loggedInUser = auth()->user();
+        $loggedInUsername = $loggedInUser->nama_user;  
+        $posisi = $request ->posisi;
+
+        $existingposisi = Posisi::where('posisi', $posisi)
+        ->where('id', '!=', $id)
+        ->first();
+
+        if ($existingposisi) {
+            // Jika organisasi dengan nama yang sama sudah ada, tampilkan pesan error
+            $request->session()->flash('error', "Posisi sudah terdaftar.");
+            return redirect()->route('posisi');
+        }
+
         $data = Posisi::find($id);
         $data->kode_orange = $request->kode_orange;
         $data->jenis_pekerjaan = $request->jenis_pekerjaan;
         $data->posisi = $request -> posisi;
+        $data->updated_by = $loggedInUsername;
+        
         $data->standarisasi_upah = $request->standarisasi_upah;
 
         $data->save();

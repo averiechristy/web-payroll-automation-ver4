@@ -31,6 +31,8 @@ class GajiImport implements ToModel, WithStartRow, WithHeadingRow, WithMultipleS
     public function model(array $row)
     {                   
       
+        $loggedInUser = auth()->user();
+        $loggedInUsername = $loggedInUser->nama_user; 
         
        $karyawan = Karyawan::where('nama_karyawan', $row['nama_karyawan'])->first();
        $karyawanid = $karyawan ->id;
@@ -132,13 +134,10 @@ class GajiImport implements ToModel, WithStartRow, WithHeadingRow, WithMultipleS
             'tanggal_selesai_gaji' => $formattedDateselesaigaji,
             'tanggal_mulai_tunjangan' => $formattedDatemulaitunjangan,
             'tanggal_selesai_tunjangan' => $formattedDateselesaitunjangan,
-
+            'created_by' => $loggedInUsername,
         ]);
     
-
     }
-
-
 
     public function sheets(): array
     {

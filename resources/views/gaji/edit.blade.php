@@ -100,6 +100,8 @@
             var nominaltunjangan =document.getElementById('tunjangan');
             var karyawan = document.getElementById('karyawan');
 
+           
+
             if (startDateGaji.value <= currentDate || endDateGaji.value <= currentDate || startDateTunjangan.value <= currentDate || endDateTunjangan.value <= currentDate) {
                 karyawan.setAttribute('readonly', true);
                 karyawan.style.pointerEvents = 'none'; // Prevents dropdown from appearing

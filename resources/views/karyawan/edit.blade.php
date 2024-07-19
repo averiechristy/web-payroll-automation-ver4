@@ -1,5 +1,4 @@
 @extends('layouts.app')
-
 @section('content')
 
 <div class="main-panel">
@@ -14,7 +13,7 @@
             
               </div>
 
-              <div class="card shadow mb-4">
+        <div class="card shadow mb-4">
             <div class="card-body">
             <form name="saveform" action="{{route('updatekaryawan', $data->id)}}" method="post" onsubmit="return validateForm()">
          
@@ -110,14 +109,12 @@ function validasiNumber(input) {
                     </div>       
                     
                     
-               
-
                     <div class="form-group mb-4">
-                    <label for="" class="form-label" style="color:black;">Management Fee (%)</label>
+                    <label for="" class="form-label" style="color:black;">Biaya Manajemen (%)</label>
                     <input name="management_fee" type="number" min="0"  class="form-control " style="border-color: #01004C;" value="{{$convertfee}}" />
                     </div>    
 
-                    <script>
+<script>
 function validasiNumber(input) {
     // Hapus karakter titik (.) dari nilai input
     input.value = input.value.replace(/\./g, '');
@@ -138,6 +135,38 @@ function validasiNumber(input) {
                     </div>    
 
 
+                    <div class="form-group mb-4">
+            <label for="tanggal_bergabung" class="form-label" style="color:black;">Tanggal Bergabung</label>
+            <input name="tanggal_bergabung" id="tanggal_bergabung" type="date" class="form-control" style="border-color: #01004C;" value="{{$data->tanggal_bergabung}}"/>
+        </div>
+
+<!-- <div class="card shadow mb-4">
+    <div class="card-header">
+        <h5 class="font-weight-bold">Periode Kontrak</h5>
+    </div>
+    <div class="card-body">
+        <div class="form-group mb-4">
+            <label for="tanggal_awal" class="form-label" style="color:black;">Tanggal Awal Kontrak</label>
+            <input name="tanggal_awal_kontrak" id="tanggal_awal_kontrak" type="date" class="form-control" style="border-color: #01004C;" value="{{$data->tanggal_awal_kontrak}}"/>
+        </div>
+        <div class="form-group mb-4">
+            <label for="tanggal_akhir" class="form-label" style="color:black;">Tanggal Akhir Kontrak</label>
+            <input name="tanggal_akhir_kontrak" id="tanggal_akhir_kontrak" type="date" class="form-control" style="border-color: #01004C;" value="{{$data->tanggal_akhir_kontrak}}" />
+        </div>
+    </div>
+</div> -->
+
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const tanggalAwalInput = document.getElementById('tanggal_awal_kontrak');
+        const today = new Date().toISOString().split('T')[0];
+
+        if (tanggalAwalInput.value < today) {
+            tanggalAwalInput.setAttribute('readonly', true);
+        }
+    });
+</script>
+
         <div class="form-group mb-4">
         <button type="submit" class="btn btn-primary btn-fw">Simpan</button>
         </div>
@@ -147,8 +176,6 @@ function validasiNumber(input) {
                 </div>
 
                 </div>
-
-
 
             </div>
           </div>
@@ -160,27 +187,39 @@ function validasiNumber(input) {
         <!-- partial -->
       </div>
 
-
       <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var dateInput = document.getElementById('tanggal_awal_kontrak');
+            dateInput.addEventListener('click', function() {
+                this.showPicker();
+            });
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            var dateInput = document.getElementById('tanggal_akhir_kontrak');
+            dateInput.addEventListener('click', function() {
+                this.showPicker();
+            });
+        });
+    </script>
+           <script>
 
 function validateForm() {
 
-    let nik = document.forms["saveform"]["nik"].value;
-    let payroll = document.forms["saveform"]["payroll_code"].value;
-    let nama =document.forms["saveform"]["nama_karyawan"].value;
-    let noamandemen =document.forms["saveform"]["no_amandemen"].value;
-    let nikktp =document.forms["saveform"]["nik_ktp"].value;
-    let penempatan =document.forms["saveform"]["penempatan_id"].value;
-    let posisi =document.forms["saveform"]["posisi_id"].value;
-    let jabatan =document.forms["saveform"]["jabatan"].value;
-    let bagian =document.forms["saveform"]["bagian"].value;
 
-    let upah =document.forms["saveform"]["upah_pokok"].value;
-
-    let tunjangan =document.forms["saveform"]["tunjangan_spv"].value;
-    let management =document.forms["saveform"]["management_fee"].value;
-    let leader =document.forms["saveform"]["leader"].value;
-    let status =document.forms["saveform"]["status_karyawan"].value;
+    let nik = document.forms["saveform"]["nik"].value.trim();
+    let payroll = document.forms["saveform"]["payroll_code"].value.trim();
+    let nama =document.forms["saveform"]["nama_karyawan"].value.trim();
+    let noamandemen =document.forms["saveform"]["no_amandemen"].value.trim();
+    let nikktp =document.forms["saveform"]["nik_ktp"].value.trim();
+    let penempatan =document.forms["saveform"]["penempatan_id"].value.trim();
+    let posisi =document.forms["saveform"]["posisi_id"].value.trim();
+    let jabatan =document.forms["saveform"]["jabatan"].value.trim();
+    let bagian =document.forms["saveform"]["bagian"].value.trim();
+    let management =document.forms["saveform"]["management_fee"].value.trim();
+    let leader =document.forms["saveform"]["leader"].value.trim();
+    let status =document.forms["saveform"]["status_karyawan"].value.trim();
+    let joindate =document.forms["saveform"]["tanggal_bergabung"].value.trim();
+  
 
   if (nik == "" ) {
     alert("NIK harus diisi.");
@@ -212,17 +251,9 @@ function validateForm() {
     alert("Bagian harus diisi.");
     return false;
   }
-  else  if (upah == "" ) {
-    alert("Upah pokok harus diisi.");
-    return false;
-  }
-  else  if (tunjangan == "" ) {
-    alert("Tunjangan SPV harus diisi.");
-    return false;
-  }
 
   else  if (management == "" ) {
-    alert("Management fee harus diisi.");
+    alert("Biaya manajemen harus diisi.");
     return false;
   }
   else  if (leader == "" ) {
@@ -232,9 +263,10 @@ function validateForm() {
   else  if (status == "" ) {
     alert("Status karyawan harus diisi.");
     return false;
+  }   else  if (joindate == "" ) {
+    alert("Tanggal bergabung harus diisi.");
+    return false;
   }
-
-
 
 }
 </script>

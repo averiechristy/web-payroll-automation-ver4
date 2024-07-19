@@ -49,6 +49,21 @@ class GajiController extends Controller
             if ($data->isEmpty() || $data->first()->isEmpty()) {
                 throw new \Exception("File harus diisi.");
 
+
+                
+            }
+
+
+            $hasData = false;
+            foreach ($data->first() as $row) {
+                if ($row->filter()->isNotEmpty()) {
+                    $hasData = true;
+                    break;
+                }
+            }
+            
+            if (!$hasData) {
+                throw new \Exception("File harus diisi.");
             }
             // Lakukan impor
             Excel::import(new GajiImport, $file);
@@ -96,31 +111,60 @@ class GajiController extends Controller
         $tanggalmulaitunjangan = $request-> tanggal_mulai_tunjangan;
         $tanggalselesaitunjangan = $request-> tanggal_selesai_tunjangan;
 
+        $loggedInUser = auth()->user();
+        $loggedInUsername = $loggedInUser->nama_user; 
+
         $existingEntryGaji = Gaji::where('karyawan_id', $request->karyawan_id)
         ->where(function ($query) use ($request) {
             $query->where(function ($q) use ($request) {
-                $q->where('tanggal_mulai_gaji', '<=', $request->tanggal_mulai_gaji)
-                    ->where('tanggal_selesai_gaji', '>=', $request->tanggal_mulai_gaji);
+                $q->where('tanggal_mulai_gaji', '>=', $request->tanggal_mulai_gaji)
+                    ->where('tanggal_mulai_gaji', '<=', $request->tanggal_selesai_gaji);
             })
             ->orWhere(function ($q) use ($request) {
-                $q->where('tanggal_mulai_gaji', '<=', $request->tanggal_selesai_gaji)
+                $q->where('tanggal_selesai_gaji', '>=', $request->tanggal_mulai_gaji)
+                    ->where('tanggal_selesai_gaji', '<=', $request->tanggal_selesai_gaji);
+            })
+            ->orWhere(function ($q) use ($request) {
+                $q->where('tanggal_mulai_gaji', '<=', $request->tanggal_mulai_gaji)
                     ->where('tanggal_selesai_gaji', '>=', $request->tanggal_selesai_gaji);
             });
         })
-        ->first();
-
-        $existingEntryTunjangan = Gaji::where('karyawan_id', $request->karyawan_id)
-        ->where(function ($query) use ($request) {
-            $query->where(function ($q) use ($request) {
-                $q->where('tanggal_mulai_tunjangan', '<=', $request->tanggal_mulai_tunjangan)
-                    ->where('tanggal_selesai_tunjangan', '>=', $request->tanggal_mulai_tunjangan);
-            })
-            ->orWhere(function ($q) use ($request) {
-                $q->where('tanggal_mulai_tunjangan', '<=', $request->tanggal_selesai_tunjangan)
-                    ->where('tanggal_selesai_tunjangan', '>=', $request->tanggal_selesai_tunjangan);
-            });
+        ->orWhere(function ($query) use ($request) {
+            $query->where('tanggal_mulai_gaji', '<=', $request->tanggal_mulai_gaji)
+                ->where('tanggal_selesai_gaji', '>=', $request->tanggal_mulai_gaji);
+        })
+        ->orWhere(function ($query) use ($request) {
+            $query->where('tanggal_mulai_gaji', '>=', $request->tanggal_mulai_gaji)
+                ->where('tanggal_selesai_gaji', '<=', $request->tanggal_selesai_gaji);
         })
         ->first();
+
+    
+        $existingEntryTunjangan = Gaji::where('karyawan_id', $request->karyawan_id)
+    ->where(function ($query) use ($request) {
+        $query->where(function ($q) use ($request) {
+            $q->where('tanggal_mulai_tunjangan', '>=', $request->tanggal_mulai_tunjangan)
+                ->where('tanggal_mulai_tunjangan', '<=', $request->tanggal_selesai_tunjangan);
+        })
+        ->orWhere(function ($q) use ($request) {
+            $q->where('tanggal_selesai_tunjangan', '>=', $request->tanggal_mulai_tunjangan)
+                ->where('tanggal_selesai_tunjangan', '<=', $request->tanggal_selesai_tunjangan);
+        })
+        ->orWhere(function ($q) use ($request) {
+            $q->where('tanggal_mulai_tunjangan', '<=', $request->tanggal_mulai_tunjangan)
+                ->where('tanggal_selesai_tunjangan', '>=', $request->tanggal_selesai_tunjangan);
+        });
+    })
+    ->orWhere(function ($query) use ($request) {
+        $query->where('tanggal_mulai_tunjangan', '<=', $request->tanggal_mulai_tunjangan)
+            ->where('tanggal_selesai_tunjangan', '>=', $request->tanggal_mulai_tunjangan);
+    })
+    ->orWhere(function ($query) use ($request) {
+        $query->where('tanggal_mulai_tunjangan', '>=', $request->tanggal_mulai_tunjangan)
+            ->where('tanggal_selesai_tunjangan', '<=', $request->tanggal_selesai_tunjangan);
+    })
+    ->first();
+
         
         if ($existingEntryGaji && $existingEntryTunjangan) {
             $karyawan = Karyawan::find($karyawanid);
@@ -152,6 +196,7 @@ class GajiController extends Controller
             'tunjangan' => $tunjangan, 
             'tanggal_mulai_tunjangan' => $tanggalmulaitunjangan,
             'tanggal_selesai_tunjangan' => $tanggalselesaitunjangan,
+            'created_by' => $loggedInUsername,
         ]);
 
         $request->session()->flash('success', "Gaji dan tunjangan berhasil ditambahkan.");
@@ -195,7 +240,58 @@ class GajiController extends Controller
         $tunjangan = $request -> tunjangan;
         $mulaitunjangan = $request->tanggal_mulai_tunjangan;
         $selesaitunjangan = $request->tanggal_selesai_tunjangan;
+        $existingEntryGaji = Gaji::where('karyawan_id', $request->karyawan_id)
+        ->where(function ($query) use ($request) {
+            $query->where(function ($q) use ($request) {
+                $q->where('tanggal_mulai_gaji', '<=', $request->tanggal_mulai_gaji)
+                    ->where('tanggal_selesai_gaji', '>=', $request->tanggal_mulai_gaji);
+            })
+            ->orWhere(function ($q) use ($request) {
+                $q->where('tanggal_mulai_gaji', '<=', $request->tanggal_selesai_gaji)
+                    ->where('tanggal_selesai_gaji', '>=', $request->tanggal_selesai_gaji);
+            });
+        })
+        ->where('id', '<>', $id)
+        ->first();
+
+        $existingEntryTunjangan = Gaji::where('karyawan_id', $request->karyawan_id)
+        ->where(function ($query) use ($request) {
+            $query->where(function ($q) use ($request) {
+                $q->where('tanggal_mulai_tunjangan', '<=', $request->tanggal_mulai_tunjangan)
+                    ->where('tanggal_selesai_tunjangan', '>=', $request->tanggal_mulai_tunjangan);
+            })
+            ->orWhere(function ($q) use ($request) {
+                $q->where('tanggal_mulai_tunjangan', '<=', $request->tanggal_selesai_tunjangan)
+                    ->where('tanggal_selesai_tunjangan', '>=', $request->tanggal_selesai_tunjangan);
+            });
+        })
+        ->where('id', '<>', $id)
+        ->first();
         
+        if ($existingEntryGaji && $existingEntryTunjangan) {
+            $karyawan = Karyawan::find($karyawanid);
+            $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+            $request->session()->flash('error', "Gaji dan tunjangan untuk karyawan $namaKaryawan sudah terdaftar pada rentang tanggal yang sama.");
+            return redirect(route('gaji'))->withInput();
+        }
+        
+        if ($existingEntryGaji) {
+            $karyawan = Karyawan::find($karyawanid);
+            $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+            $request->session()->flash('error', "Gaji untuk karyawan $namaKaryawan sudah terdaftar pada rentang tanggal yang sama.");
+            return redirect(route('gaji'))->withInput();
+        }
+        
+        if ($existingEntryTunjangan) {
+            $karyawan = Karyawan::find($karyawanid);
+            $namaKaryawan = $karyawan ? $karyawan->nama_karyawan : 'tidak diketahui';
+            $request->session()->flash('error', "Tunjangan untuk karyawan $namaKaryawan sudah terdaftar pada rentang tanggal yang sama.");
+            return redirect(route('gaji'))->withInput();
+        }
+        
+        $loggedInUser = auth()->user();
+        $loggedInUsername = $loggedInUser->nama_user; 
+
         $data -> karyawan_id = $karyawanid;
         $data -> gaji = $gaji;
         $data -> tunjangan = $tunjangan;
@@ -203,6 +299,7 @@ class GajiController extends Controller
         $data -> tanggal_selesai_gaji = $selesaigaji;
         $data -> tanggal_mulai_tunjangan = $mulaitunjangan;
         $data -> tanggal_selesai_tunjangan = $selesaitunjangan;
+        $data -> updated_by = $loggedInUsername;
         $data->save();
 
 
